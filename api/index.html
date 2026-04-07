@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Medical Imaging Analysis System</title>
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+}
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 600px;
+}
+h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+}
+h3 {
+    color: #4a5568;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 10px;
+}
+button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: transform 0.2s;
+}
+button:hover {
+    transform: translateY(-2px);
+}
+button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+input[type="file"] {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+p {
+    margin: 10px 0;
+    font-weight: 500;
+}
+ul {
+    text-align: left;
+    padding-left: 20px;
+}
+li {
+    margin: 5px 0;
+}
+.img-container {
+    text-align: center;
+    margin-top: 20px;
+}
+img {
+    max-width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.probs {
+    background: #f7fafc;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+.prob-bar {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    align-items: center;
+}
+.prob-fill {
+    height: 20px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    margin-left: 10px;
+    min-width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+.loading {
+    display: none;
+    text-align: center;
+    margin-top: 20px;
+}
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+nav {
+    background: rgba(255,255,255,0.9);
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.nav-btn {
+    padding: 10px 20px;
+    margin: 0 5px;
+    border: none;
+    background: #f7fafc;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+.nav-btn:hover, .nav-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+.section {
+    display: none;
+}
+.section.active {
+    display: block;
+}
+footer {
+    text-align: center;
+    padding: 20px;
+    color: white;
+    margin-top: 40px;
+}
+</style>
+</head>
+
+<body>
+<nav>
+    <button onclick="showSection('home')" class="nav-btn active">🏠 Home</button>
+    <button onclick="showSection('about')" class="nav-btn">ℹ️ About</button>
+</nav>
+
+<div id="home" class="section active">
+<h2>🩺 Medical AI Diagnosis System</h2>
+
+<div class="container">
+
+<div class="card">
+<h3>🧠 Brain Tumor Detection</h3>
+<p>Upload a brain MRI scan image (e.g., T1, T2, FLAIR)</p>
+<input type="file" id="brainFile" accept="image/*">
+<div style="display: flex; gap: 10px; margin-top: 10px;">
+<button onclick="brain()" id="brainBtn">🔍 Analyze</button>
+<button onclick="clearBrain()" id="clearBrainBtn" style="background: #e53e3e;">🗑️ Clear</button>
+<button onclick="exportBrain()" id="exportBrainBtn" style="background: #38a169;">📄 Export Report</button>
+</div>
+
+<div class="loading" id="brainLoading">
+<div class="spinner"></div>
+<p>Analyzing...</p>
+</div>
+
+<p id="b_pred"></p>
+<p id="b_conf"></p>
+<p>Analysis Time: <span id="b_time"></span></p>
+
+<div class="probs" id="b_probs" style="display:none;">
+<h4>Class Probabilities:</h4>
+<div id="b_prob_list"></div>
+</div>
+
+<ul id="b_sug"></ul>
+
+<div class="img-container">
+<img id="b_img" style="display:none;" alt="Analyzed brain scan with tumor highlight">
+</div>
+
+<div class="error" id="b_error" style="display:none;"></div>
+</div>
+
+<div class="card">
+<h3>🪨 Kidney Stone Detection</h3>
+<p>Upload a kidney ultrasound or CT scan image</p>
+<input type="file" id="kidneyFile" accept="image/*">
+<div style="display: flex; gap: 10px; margin-top: 10px;">
+<button onclick="kidney()" id="kidneyBtn">🔍 Analyze</button>
+<button onclick="clearKidney()" id="clearKidneyBtn" style="background: #e53e3e;">🗑️ Clear</button>
+<button onclick="exportKidney()" id="exportKidneyBtn" style="background: #38a169;">📄 Export Report</button>
+</div>
+
+<div class="loading" id="kidneyLoading">
+<div class="spinner"></div>
+<p>Analyzing...</p>
+</div>
+
+<p id="k_pred"></p>
+<p id="k_conf"></p>
+<p>Analysis Time: <span id="k_time"></span></p>
+
+<div class="probs" id="k_probs" style="display:none;">
+<h4>Class Probabilities:</h4>
+<div id="k_prob_list"></div>
+</div>
+
+<ul id="k_sug"></ul>
+
+<div class="error" id="k_error" style="display:none;"></div>
+</div>
+
+</div>
+</div>
+
+<div id="about" class="section">
+<h2>About Our Project</h2>
+<div class="container">
+<div class="card">
+<h3>🎓 About Us</h3>
+<p>We are students from <strong>Methodist College Of Engineering And Technology, Hyderabad, India</strong>.</p>
+<p><strong>Team Members:</strong></p>
+<ul>
+<li>Mohammed Tabarak Ahmed</li>
+<li>J. Rahul</li>
+<li>Akhilesh Manikanta</li>
+</ul>
+
+<h3>🩺 Project Overview</h3>
+<p>This Medical AI Diagnosis System is a cutting-edge web application developed as part of our academic project. It leverages advanced deep learning techniques to assist in preliminary medical diagnosis using imaging data.</p>
+
+<h3>🔬 Technical Details</h3>
+<p><strong>Brain Tumor Detection:</strong> Utilizes a U-Net based convolutional neural network trained on MRI scan datasets to perform semantic segmentation, identifying and highlighting potential tumor regions with high precision.</p>
+<p><strong>Kidney Stone Detection:</strong> Employs a ResNet-based classification model to analyze ultrasound and CT images, providing probability scores for stone presence detection.</p>
+
+<h3>⚠️ Important Disclaimer</h3>
+<p>This application is developed for <strong>educational and research purposes only</strong>. It is not intended to replace professional medical diagnosis or treatment. All results should be verified by qualified healthcare professionals. In case of medical emergencies, please contact your local healthcare provider immediately.</p>
+
+<h3>🛠️ Technologies & Training Details</h3>
+<p><strong>Core Technologies:</strong></p>
+<ul>
+<li><strong>PyTorch:</strong> Primary deep learning framework for model development, training, and inference</li>
+<li><strong>Segmentation Models PyTorch:</strong> High-level library providing pre-implemented U-Net architectures with various encoders (ResNet, EfficientNet)</li>
+<li><strong>torchvision:</strong> Computer vision library for image transformations, data loading, and pre-trained model utilities</li>
+<li><strong>OpenCV:</strong> Image processing library for loading, preprocessing, and post-processing medical images</li>
+<li><strong>NumPy & PIL:</strong> Numerical computing and image handling libraries</li>
+<li><strong>FastAPI:</strong> Modern, fast web framework for building REST APIs with automatic OpenAPI documentation</li>
+<li><strong>Uvicorn:</strong> ASGI server for running FastAPI applications</li>
+<li><strong>Albumentations:</strong> Advanced image augmentation library for data preprocessing during training</li>
+<li><strong>scikit-learn:</strong> Machine learning utilities for evaluation metrics and data splitting</li>
+</ul>
+
+<h3>🎯 Model Training Process</h3>
+<p><strong>Brain Tumor Segmentation Model:</strong></p>
+<ul>
+<li><strong>Architecture:</strong> U-Net with ResNet-34 encoder (from Segmentation Models PyTorch)</li>
+<li><strong>Dataset:</strong> Medical imaging datasets including TCGA brain MRI scans</li>
+<li><strong>Training:</strong> Binary segmentation task with Dice loss and Adam optimizer</li>
+<li><strong>Augmentations:</strong> Random rotations, flips, brightness/contrast adjustments using Albumentations</li>
+<li><strong>Validation:</strong> Dice coefficient and IoU metrics for segmentation accuracy</li>
+<li><strong>Hardware:</strong> Trained on GPU with CUDA acceleration</li>
+</ul>
+
+<p><strong>Kidney Stone Classification Model:</strong></p>
+<ul>
+<li><strong>Architecture:</strong> ResNet-50 based classifier with custom fully-connected layers</li>
+<li><strong>Dataset:</strong> Kidney ultrasound and CT scan datasets with stone/normal classifications</li>
+<li><strong>Training:</strong> Cross-entropy loss with Adam optimizer and learning rate scheduling</li>
+<li><strong>Data Processing:</strong> Image resizing to 224x224, normalization, and augmentation</li>
+<li><strong>Evaluation:</strong> Accuracy, precision, recall, and F1-score metrics</li>
+<li><strong>Hardware:</strong> GPU-accelerated training with PyTorch DataLoader for efficient batch processing</li>
+</ul>
+
+<h3>🔧 Development & Deployment</h3>
+<ul>
+<li><strong>Backend:</strong> FastAPI with automatic API documentation and CORS support</li>
+<li><strong>Frontend:</strong> Vanilla JavaScript with modern ES6+ features, responsive CSS design</li>
+<li><strong>Model Serving:</strong> PyTorch model loading with GPU/CPU compatibility</li>
+<li><strong>Image Processing:</strong> Real-time preprocessing and post-processing pipelines</li>
+<li><strong>Error Handling:</strong> Comprehensive exception handling and user feedback</li>
+</ul>
+
+<p><strong>Training Environment:</strong> Models were trained on high-performance computing resources with GPU acceleration, utilizing PyTorch's distributed training capabilities for optimal performance.</p>
+
+<p>This project demonstrates the potential of AI in healthcare while emphasizing the importance of human expertise in medical decision-making.</p>
+</div>
+</div>
+</div>
+
+<footer>
+<p>&copy; 2024 Medical AI Diagnosis System - Methodist College Of Engineering And Technology</p>
+</footer>
+
+<script>
+const API = "http://127.0.0.1:8003";
+
+async function brain(){
+const btn = document.getElementById("brainBtn");
+const loading = document.getElementById("brainLoading");
+const errorDiv = document.getElementById("b_error");
+
+btn.disabled = true;
+loading.style.display = "block";
+errorDiv.style.display = "none";
+
+try {
+let f=document.getElementById("brainFile").files[0];
+if (!f) throw new Error("Please select a file");
+
+let fd=new FormData();
+fd.append("file",f);
+
+let r=await fetch(API+"/predict/brain",{method:"POST",body:fd});
+if (!r.ok) throw new Error(`Server error: ${r.status}`);
+
+let d=await r.json();
+
+document.getElementById("b_pred").innerText="Prediction: "+d.prediction;
+document.getElementById("b_conf").innerText="Confidence: "+d.confidence;
+document.getElementById("b_time").innerText = new Date(d.timestamp).toLocaleString();
+
+let probList = document.getElementById("b_prob_list");
+probList.innerHTML = "";
+for (let [cls, prob] of Object.entries(d.class_probs)) {
+    let div = document.createElement("div");
+    div.className = "prob-bar";
+    div.innerHTML = `
+        <span class="prob-label">${cls}:</span>
+        <div class="prob-fill" style="width: ${prob * 100}%">${(prob*100).toFixed(1)}%</div>
+    `;
+    probList.appendChild(div);
+}
+document.getElementById("b_probs").style.display = "block";
+
+let ul=document.getElementById("b_sug");
+ul.innerHTML="";
+d.suggestions.forEach(s=>{
+let li=document.createElement("li");
+li.innerText=s;
+ul.appendChild(li);
+});
+
+let img = document.getElementById("b_img");
+img.src=API+d.output_image;
+img.style.display = "block";
+
+} catch (e) {
+errorDiv.innerText = e.message;
+errorDiv.style.display = "block";
+} finally {
+btn.disabled = false;
+loading.style.display = "none";
+}
+}
+
+async function kidney(){
+const btn = document.getElementById("kidneyBtn");
+const loading = document.getElementById("kidneyLoading");
+const errorDiv = document.getElementById("k_error");
+
+btn.disabled = true;
+loading.style.display = "block";
+errorDiv.style.display = "none";
+
+try {
+let f=document.getElementById("kidneyFile").files[0];
+if (!f) throw new Error("Please select a file");
+
+let fd=new FormData();
+fd.append("file",f);
+
+let r=await fetch(API+"/predict/kidney",{method:"POST",body:fd});
+if (!r.ok) throw new Error(`Server error: ${r.status}`);
+
+let d=await r.json();
+
+document.getElementById("k_pred").innerText="Prediction: "+d.prediction;
+document.getElementById("k_conf").innerText="Confidence: "+d.confidence;
+document.getElementById("k_time").innerText = new Date(d.timestamp).toLocaleString();
+
+let probList = document.getElementById("k_prob_list");
+probList.innerHTML = "";
+for (let [cls, prob] of Object.entries(d.class_probs)) {
+    let div = document.createElement("div");
+    div.className = "prob-bar";
+    div.innerHTML = `
+        <span class="prob-label">${cls}:</span>
+        <div class="prob-fill" style="width: ${prob * 100}%">${(prob*100).toFixed(1)}%</div>
+    `;
+    probList.appendChild(div);
+}
+document.getElementById("k_probs").style.display = "block";
+
+let ul=document.getElementById("k_sug");
+ul.innerHTML="";
+d.suggestions.forEach(s=>{
+let li=document.createElement("li");
+li.innerText=s;
+ul.appendChild(li);
+});
+
+} catch (e) {
+errorDiv.innerText = e.message;
+errorDiv.style.display = "block";
+} finally {
+btn.disabled = false;
+loading.style.display = "none";
+}
+}
+
+function clearBrain() {
+document.getElementById("brainFile").value = "";
+document.getElementById("b_pred").innerText = "";
+document.getElementById("b_conf").innerText = "";
+document.getElementById("b_time").innerText = "";
+document.getElementById("b_prob_list").innerHTML = "";
+document.getElementById("b_probs").style.display = "none";
+document.getElementById("b_sug").innerHTML = "";
+document.getElementById("b_img").src = "";
+document.getElementById("b_img").style.display = "none";
+document.getElementById("b_error").style.display = "none";
+}
+
+function exportBrain() {
+const pred = document.getElementById("b_pred").innerText;
+const conf = document.getElementById("b_conf").innerText;
+const time = document.getElementById("b_time").innerText;
+const sug = Array.from(document.querySelectorAll("#b_sug li")).map(li => li.innerText).join("\n");
+
+const report = `Brain Tumor Analysis Report\n\n${pred}\n${conf}\nAnalysis Time: ${time}\n\nSuggestions:\n${sug}`;
+
+downloadFile(report, "brain_analysis_report.txt");
+}
+
+function clearKidney() {
+document.getElementById("kidneyFile").value = "";
+document.getElementById("k_pred").innerText = "";
+document.getElementById("k_conf").innerText = "";
+document.getElementById("k_time").innerText = "";
+document.getElementById("k_prob_list").innerHTML = "";
+document.getElementById("k_probs").style.display = "none";
+document.getElementById("k_sug").innerHTML = "";
+document.getElementById("k_error").style.display = "none";
+}
+
+function exportKidney() {
+const pred = document.getElementById("k_pred").innerText;
+const conf = document.getElementById("k_conf").innerText;
+const time = document.getElementById("k_time").innerText;
+const sug = Array.from(document.querySelectorAll("#k_sug li")).map(li => li.innerText).join("\n");
+
+const report = `Kidney Stone Analysis Report\n\n${pred}\n${conf}\nAnalysis Time: ${time}\n\nSuggestions:\n${sug}`;
+
+downloadFile(report, "kidney_analysis_report.txt");
+}
+
+function downloadFile(content, filename) {
+const blob = new Blob([content], { type: "text/plain" });
+const url = URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url;
+a.download = filename;
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+URL.revokeObjectURL(url);
+}
+
+function showSection(sectionId) {
+document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+document.getElementById(sectionId).classList.add('active');
+event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>
